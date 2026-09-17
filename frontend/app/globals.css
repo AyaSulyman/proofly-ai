@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --color-navy-50: #EEF1FB;
+  --color-navy-100: #C6CEE8;
+  --color-navy-300: #63698A;
+  --color-navy-500: #1F3A73;
+  --color-navy-600: #152B5C;
+  --color-navy-700: #0F2047;
+
+  --color-gold-300: #F3C874;
+  --color-gold-500: #D9A441;
+
+  --color-bg: #F7F9FD;
+  --color-line: #E7EAF3;
+
+  --color-ok: #1E9E6B;
+  --color-ok-bg: #E7F8EF;
+  --color-danger: #D14343;
+  --color-danger-bg: #FDEBEE;
+  --color-warn: #C88A1A;
+  --color-warn-bg: #FBF2E1;
+  --color-info: #3B5BDB;
+  --color-info-bg: #EAF1FF;
+}
+
+@theme inline {
+  --color-navy-50: var(--color-navy-50);
+  --color-navy-100: var(--color-navy-100);
+  --color-navy-300: var(--color-navy-300);
+  --color-navy-500: var(--color-navy-500);
+  --color-navy-600: var(--color-navy-600);
+  --color-navy-700: var(--color-navy-700);
+
+  --color-gold-300: var(--color-gold-300);
+  --color-gold-500: var(--color-gold-500);
+
+  --color-bg: var(--color-bg);
+  --color-line: var(--color-line);
+
+  --color-ok: var(--color-ok);
+  --color-ok-bg: var(--color-ok-bg);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-warn: var(--color-warn);
+  --color-warn-bg: var(--color-warn-bg);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+
+  --font-sans: var(--font-poppins);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-navy-700);
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 20px 50px rgba(20, 33, 61, 0.12);
+  }
+  .shadow-card-sm {
+    box-shadow: 0 8px 20px rgba(20, 33, 61, 0.08);
+  }
+}
