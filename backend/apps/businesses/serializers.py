@@ -63,6 +63,7 @@ class BusinessCreateSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     reviewer_name = serializers.CharField(source="reviewer.full_name", read_only=True)
+    business = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Review
@@ -77,6 +78,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class BusinessVerificationSerializer(serializers.ModelSerializer):
+    business = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = BusinessVerification
         fields = ["id", "business", "document", "status", "reviewed_by", "reviewed_at", "created_at"]
