@@ -89,7 +89,7 @@ class InvestigationCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def create(self, validated_data):
-        return Investigation.objects.create(user=self.context["request"].user, **validated_data)
+        return Investigation.objects.create(**validated_data)
 
 
 class EvidenceConnectionSerializer(serializers.ModelSerializer):
