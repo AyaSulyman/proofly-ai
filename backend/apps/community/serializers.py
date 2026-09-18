@@ -29,8 +29,7 @@ class CommunityReportCreateSerializer(serializers.ModelSerializer):
         fields = ["investigation", "category", "description"]
 
     def create(self, validated_data):
-        request = self.context["request"]
-        return CommunityReport.objects.create(reporter=request.user, **validated_data)
+        return CommunityReport.objects.create(**validated_data)
 
 
 class CommunityReportDecisionSerializer(serializers.ModelSerializer):
