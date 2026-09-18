@@ -24,3 +24,4 @@ backend/ai_service/**/__pycache__/
 .vscode/
 .idea/
 qa/
+backend/media/
