@@ -33,11 +33,59 @@ class BusinessListSerializer(serializers.ModelSerializer):
             "response_rate",
         ]
 
+
+class BusinessListSerializer(serializers.ModelSerializer):
+    """Matches lib/types.ts `Business` — used on /search and list contexts."""
+
+    image_url = serializers.SerializerMethodField()
+    member_since = serializers.DateTimeField(
+        source="created_at",
+        read_only=True,
+    )
+    rating = serializers.FloatField()
+
+    class Meta:
+        model = Business
+        fields = [
+            "id",
+            "name",
+            "category",
+            "is_individual",
+            "website",
+            "email",
+            "phone",
+            "location",
+            "image_url",
+            "verification_status",
+            "risk_level",
+            "risk_score",
+            "rating",
+            "review_count",
+            "member_since",
+            "response_rate",
+        ]
+
     def get_image_url(self, obj):
-        if obj.image:
-            request = self.context.get("request")
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return None
+        if not obj.image:
+            return None
+
+        image_value = str(obj.image)
+
+        # Handle external URLs accidentally stored in the ImageField
+        if image_value.startswith(("http://", "https://")):
+          return None
+
+        request = self.context.get("request")
+
+        try:
+            image_url = obj.image.url
+        except (ValueError, AttributeError):
+            return None
+
+        if request:
+            return request.build_absolute_uri(image_url)
+
+        return image_url
 
 
 class BusinessDetailSerializer(BusinessListSerializer):
