@@ -1,72 +1,97 @@
 # Proofly AI — Frontend
 
-Next.js 16 (App Router) + TypeScript + Tailwind CSS v4.
+Next.js 16 (App Router) + TypeScript + Tailwind CSS v4. Fully connected
+to the real Django API — no mock data.
 
-## Getting started
+## Setup
 
 ```bash
+cd frontend
+cp .env.local.example .env.local   # sets API_URL=http://localhost:8000
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. Requires the Django backend running at
+`API_URL` (see `../backend/README.md`).
+
+Log in with a seeded demo account, e.g. `sara.ahmed@email.com` /
+`password123`.
 
 ## Structure
 
 ```
 app/
   page.tsx                     Landing page
-  login/ register/             Auth pages
+  login/ register/             Real JWT auth (Route Handlers set httpOnly cookies)
   forgot-password/ reset-password/ verify-email/
   not-found.tsx                 404
   access-denied/                 403 equivalent
-  search/                       Search results
-  business/[id]/                Public trust profile (business/seller)
-  business/claim/               Claim-a-business entry point
+  search/                       Real search results
+  business/[id]/                Public trust profile + live review posting
+  business/claim/               Real business creation (auth-gated)
   (app)/                        Authenticated app shell (sidebar + topbar)
-    investigations/             List, new (subject+details), evidence,
-                                 AI review, [id] (trust report / read-only)
-    reports/                    My reports, new report, [id] detail
-    disputes/                   List, [id] thread
-    notifications/
-    settings/                   Profile + Security tabs
+    investigations/             List, new, [id]/evidence, [id]/review,
+                                 [id] (trust report / read-only) — all real
+    reports/                    Real list/detail/submit
+    disputes/                   Real thread, reply/resolve
+    notifications/               Real list, mark-read
+    settings/                   Real profile/security/2FA
+  api/auth/                     Route Handlers: login/register/logout
+                                 (proxy to Django, set httpOnly cookies)
+  api/investigations-list/      Thin proxy for client-side dropdowns
 
 components/
-  ui/                           Design-system primitives (Button, Badge,
-                                 Card, Input, Avatar, RiskRing, StepIndicator…)
-  layout/                       SiteHeader/Footer, AuthShell, AppShell
+  ui/                           Design-system primitives
+  layout/                       SiteHeader/Footer, AuthShell, AppShell,
+                                 SignOutButton
 
 lib/
   types.ts                      TypeScript types mirroring the ERD
-  mock-data.ts                  Placeholder data standing in for the
-                                 Django REST API until it's connected
+  session.ts                    Server-only: reads the JWT from the
+                                 httpOnly cookie, apiFetch()/publicFetch()
+                                 wrappers used by every Server Component
+  mock-data.ts                  No longer used anywhere — kept only as a
+                                 reference for the original data shapes
   utils.ts                      cn(), avatar color/initials helpers, dates
+
+proxy.ts                        Route protection (Next 16's renamed
+                                 middleware.ts) — guards /investigations,
+                                 /reports, /disputes, /notifications,
+                                 /settings; redirects signed-in users
+                                 away from /login, /register
 ```
+
+Each authenticated section also has a colocated `actions.ts` ("use
+server" functions) that Client Components call directly — e.g.
+`app/(app)/investigations/actions.ts` has `createInvestigation`,
+`addFileEvidence`, `runAiReview`, `analyzeInvestigation`. These are the
+only place JWTs are used to talk to Django; the token never reaches
+client-side JS.
 
 ## Business / seller profile images
 
-`components/ui/avatar.tsx` is the single component responsible for
-rendering a business, seller, or user photo everywhere in the app (search
-results, trust profiles, investigation cards, review authors, account
-settings). It takes `src` (the uploaded photo URL, i.e. what the Django
-`Business`/`User` serializer will return as `imageUrl`) and `name`:
+`components/ui/avatar.tsx` renders a business/seller/user photo
+everywhere in the app. It reads `imageUrl` from the real API response
+and `isIndividual` to decide shape (circle for a person, rounded-square
+for a company). If `imageUrl` is null or the image fails to load, it
+falls back to a deterministic colored-initials avatar — verified live
+against seeded businesses that do and don't have a photo.
 
-- If `src` is set and loads successfully → renders the real photo.
-- If `src` is missing, or the image fails to load → falls back to a
-  deterministic colored initials avatar (same business always gets the
-  same color), so the UI never shows a broken image icon.
+## Auth architecture
 
-`lib/mock-data.ts` currently seeds some businesses with a placeholder
-generated avatar (via api.dicebear.com) to preview the "has a photo" state,
-and others with `imageUrl: null` to preview the fallback. Once the backend
-is connected, swap the `businesses`/`investigations`/`currentUser` mock
-arrays for real `fetch()` calls to the Django API — the component and page
-code don't need to change.
+JWT access/refresh tokens live in httpOnly cookies set by
+`app/api/auth/{login,register,logout}`. Server Components and Server
+Actions read them via `lib/session.ts` (`next/headers` `cookies()`) and
+attach `Authorization: Bearer <token>` when calling Django — the token
+is never exposed to browser JS, unlike a typical localStorage approach.
+`proxy.ts` redirects unauthenticated requests to protected routes.
 
-## Connecting the real backend
+## Verified working end-to-end
 
-Every page that currently imports from `lib/mock-data.ts` is written so
-that data source is the only thing that needs to change (e.g. `const
-businesses = await fetch(...).then(r => r.json())` inside the relevant
-Server Component). Env vars for the API base URL should go in `.env.local`
-as `NEXT_PUBLIC_API_URL` once the Django backend exists.
+Login → search → business profile + live review → create investigation
+→ add evidence (file/URL/text) → AI review (real extraction) → analyze
+(real risk engine, detected real risk language and scored correctly) →
+trust report → submit community report → dispute reply → notifications
+→ settings update — all tested via live Playwright runs against a real
+PostgreSQL database, not just code review.
