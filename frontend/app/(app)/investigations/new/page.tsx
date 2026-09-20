@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHead } from "@/components/layout/app-shell";
 import { StepIndicator } from "@/components/ui/step-indicator";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { SubjectType } from "@/lib/types";
+import { createInvestigation } from "../actions";
 
 const SUBJECTS: { type: SubjectType; icon: string; label: string; desc: string }[] = [
   { type: "seller", icon: "🛍️", label: "Seller", desc: "Marketplace or social seller" },
@@ -27,14 +28,11 @@ const STEPS = [
   { label: "Report" },
 ];
 
-export default function NewInvestigationPage() {
-  const router = useRouter();
+function NewInvestigationForm() {
+  const searchParams = useSearchParams();
+  const prefillSubject = searchParams.get("subject") || "";
   const [subject, setSubject] = useState<SubjectType>("seller");
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    router.push("/investigations/new/evidence");
-  }
+  const [pending, setPending] = useState(false);
 
   return (
     <div>
@@ -44,7 +42,8 @@ export default function NewInvestigationPage() {
       />
       <StepIndicator steps={STEPS} currentIndex={0} />
 
-      <form onSubmit={handleSubmit} className="max-w-3xl">
+      <form action={createInvestigation} onSubmit={() => setPending(true)} className="max-w-3xl">
+        <input type="hidden" name="subjectType" value={subject} />
         <div className="mb-7 grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           {SUBJECTS.map((s) => (
             <button
@@ -74,33 +73,46 @@ export default function NewInvestigationPage() {
           </span>
 
           <Field label="Investigation Title">
-            <Input placeholder="e.g. TechDeals Express — Instagram seller" required />
+            <Input
+              name="title"
+              defaultValue={prefillSubject ? `${prefillSubject} — investigation` : ""}
+              placeholder="e.g. TechDeals Express — Instagram seller"
+              required
+            />
           </Field>
           <div className="grid gap-x-4.5 sm:grid-cols-2">
             <Field label="Seller / Business Name">
-              <Input placeholder="e.g. TechDeals Express" />
+              <Input name="subjectName" defaultValue={prefillSubject} placeholder="e.g. TechDeals Express" />
             </Field>
             <Field label="Phone Number">
-              <Input placeholder="+961 ..." />
+              <Input name="subjectPhone" placeholder="+961 ..." />
             </Field>
             <Field label="Email Address">
-              <Input placeholder="name@example.com" />
+              <Input name="subjectEmail" placeholder="name@example.com" />
             </Field>
             <Field label="Website / Profile URL">
-              <Input placeholder="instagram.com/handle" />
+              <Input name="subjectUrl" placeholder="instagram.com/handle" />
             </Field>
           </div>
           <Field label="Notes (optional)" className="sm:col-span-2">
-            <Textarea placeholder="Anything else worth noting — how you found them, why you're unsure, etc." />
+            <Textarea name="notes" placeholder="Anything else worth noting — how you found them, why you're unsure, etc." />
           </Field>
 
           <div className="mt-2 flex justify-end">
-            <Button type="submit" variant="navy">
-              Continue to Evidence →
+            <Button type="submit" variant="navy" disabled={pending}>
+              {pending ? "Creating…" : "Continue to Evidence →"}
             </Button>
           </div>
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewInvestigationPage() {
+  return (
+    <Suspense>
+      <NewInvestigationForm />
+    </Suspense>
   );
 }
