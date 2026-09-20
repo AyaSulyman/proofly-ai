@@ -6,14 +6,18 @@ import { RiskBadge, VerificationBadge, Badge } from "@/components/ui/badge";
 import { RiskRing } from "@/components/ui/risk-ring";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { businesses } from "@/lib/mock-data";
+import { publicFetch, ApiError } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
+import type { Business } from "@/lib/types";
+import { ReviewForm } from "./review-form";
 
-const REVIEWS = [
-  { name: "Layla K.", stars: 5, text: "Ordered a laptop and it arrived exactly as described, two days early. Seller responded fast to every question.", date: "3 days ago" },
-  { name: "Omar F.", stars: 4, text: "Good experience overall, packaging could be better but the product was genuine and worked fine.", date: "1 week ago" },
-  { name: "Nadine S.", stars: 5, text: "Second time buying from them. Consistent quality and honest pricing compared to similar listings.", date: "2 weeks ago" },
-];
+interface ApiReview {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
 
 export default async function BusinessProfilePage({
   params,
@@ -21,8 +25,18 @@ export default async function BusinessProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const biz = businesses.find((b) => b.id === id);
-  if (!biz) return notFound();
+
+  let biz: Business;
+  try {
+    biz = await publicFetch<Business>(`/api/businesses/${id}/`);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return notFound();
+    throw err;
+  }
+
+  const reviews = await publicFetch<{ results: ApiReview[] }>(`/api/businesses/${id}/reviews/`).then(
+    (r) => r.results
+  ).catch(() => []);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -32,7 +46,6 @@ export default async function BusinessProfilePage({
       <div className="bg-gradient-to-br from-navy-600 to-navy-700 px-6 pb-24 pt-9 text-white md:px-12">
         <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-7">
           <div className="flex items-center gap-4.5">
-            {/* The business/seller profile image, front and center on their public page */}
             <Avatar
               src={biz.imageUrl}
               name={biz.name}
@@ -92,25 +105,29 @@ export default async function BusinessProfilePage({
         <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
           <div>
             <Card className="mb-5">
-              <CardHeader title={`Community Reviews (${biz.reviewCount})`} action={<a className="text-xs font-bold text-info">See all →</a>} />
-              <div className="mb-4 flex gap-5 border-b border-line pb-3 text-[13px] text-navy-300">
-                <span className="border-b-2 border-gold-500 pb-3 font-semibold text-navy-700">Most Recent</span>
-                <span>Highest Rated</span>
-                <span>Flagged</span>
-              </div>
-              {REVIEWS.map((r, i) => (
-                <div key={r.name} className={`py-3.5 ${i < REVIEWS.length - 1 ? "border-b border-line" : ""}`}>
+              <CardHeader title={`Community Reviews (${biz.reviewCount})`} />
+              {reviews.length === 0 && (
+                <p className="py-3 text-[12.5px] text-navy-300">No reviews yet — be the first.</p>
+              )}
+              {reviews.map((r, i) => (
+                <div key={r.id} className={`py-3.5 ${i < reviews.length - 1 ? "border-b border-line" : ""}`}>
                   <div className="mb-1.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Avatar name={r.name} size="xs" shape="circle" />
-                      <b className="text-[13px]">{r.name}</b>
+                      <Avatar name={r.reviewerName} size="xs" shape="circle" />
+                      <b className="text-[13px]">{r.reviewerName}</b>
                     </div>
-                    <span className="text-xs text-gold-500">{"★".repeat(r.stars)}{"☆".repeat(5 - r.stars)}</span>
+                    <span className="text-xs text-gold-500">
+                      {"★".repeat(r.rating)}
+                      {"☆".repeat(5 - r.rating)}
+                    </span>
                   </div>
-                  <p className="text-[12.5px] leading-relaxed text-navy-300">{r.text}</p>
-                  <span className="mt-1.5 block text-[11px] text-navy-100">{r.date}</span>
+                  <p className="text-[12.5px] leading-relaxed text-navy-300">{r.comment}</p>
+                  <span className="mt-1.5 block text-[11px] text-navy-100">{formatDate(r.createdAt)}</span>
                 </div>
               ))}
+              <div className="mt-4">
+                <ReviewForm businessId={biz.id} />
+              </div>
             </Card>
           </div>
 
@@ -133,7 +150,7 @@ export default async function BusinessProfilePage({
               {[
                 ["Category", biz.category],
                 ["Verification", biz.verificationStatus === "verified" ? "✓ Verified" : "Unverified"],
-                ["Response rate", biz.responseRate ?? "—"],
+                ["Response rate", biz.responseRate || "—"],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between border-b border-line py-2 text-[12.5px] last:border-none">
                   <span className="text-navy-300">{k}</span>
@@ -147,8 +164,4 @@ export default async function BusinessProfilePage({
       <SiteFooter />
     </div>
   );
-}
-
-export function generateStaticParams() {
-  return businesses.map((b) => ({ id: b.id }));
 }

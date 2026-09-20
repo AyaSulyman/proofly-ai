@@ -3,9 +3,9 @@ import { PageHead } from "@/components/layout/app-shell";
 import { RiskRing } from "@/components/ui/risk-ring";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { investigations } from "@/lib/mock-data";
+import { apiFetch, ApiError } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
-import type { RiskLevel } from "@/lib/types";
+import type { Investigation, RiskLevel } from "@/lib/types";
 
 const SEVERITY_DOT: Record<RiskLevel, string> = {
   high: "bg-danger",
@@ -19,9 +19,16 @@ export default async function InvestigationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const inv = investigations.find((i) => i.id === id);
-  if (!inv) return notFound();
 
+  let inv: Investigation;
+  try {
+    inv = await apiFetch<Investigation>(`/api/investigations/${id}/`);
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 403)) return notFound();
+    throw err;
+  }
+
+  const graph = await apiFetch<{ count: number }>(`/api/investigations/${id}/graph/`).catch(() => ({ count: 0 }));
   const isReadOnly = inv.status === "completed";
 
   if (inv.status === "analyzing" || inv.status === "draft") {
@@ -38,7 +45,7 @@ export default async function InvestigationDetailPage({
               ? "Finish adding details and evidence to generate a trust report."
               : "We'll notify you the moment your trust report is ready."}
           </p>
-          <Button href="/investigations/new" variant="navy" block>
+          <Button href={`/investigations/${id}/evidence`} variant="navy" block>
             {inv.status === "draft" ? "Resume Investigation →" : "Back to Investigations"}
           </Button>
         </Card>
@@ -50,7 +57,7 @@ export default async function InvestigationDetailPage({
     <div>
       <PageHead
         title={inv.title}
-        description={`Report #${inv.id.replace("inv_", "")} · Generated ${formatDate(inv.createdAt)}`}
+        description={`Report #${inv.id.slice(0, 8)} · Generated ${formatDate(inv.createdAt)}`}
       />
 
       {isReadOnly && (
@@ -78,7 +85,7 @@ export default async function InvestigationDetailPage({
           <Button variant="outline" size="sm">🔖 Save</Button>
           <Button variant="outline" size="sm">📄 Download PDF</Button>
           {!isReadOnly && (
-            <Button href="/reports/new" variant="gold" size="sm">
+            <Button href={`/reports/new?investigationId=${inv.id}`} variant="gold" size="sm">
               📝 Submit Community Report
             </Button>
           )}
@@ -141,17 +148,14 @@ export default async function InvestigationDetailPage({
             <div className="flex items-center gap-3 rounded-xl bg-navy-50 p-3.5">
               <div className="text-xl">🔗</div>
               <div>
-                <b className="block text-[13px]">2 related investigations found</b>
+                <b className="block text-[13px]">
+                  {graph.count > 0 ? `${graph.count} related investigation(s) found` : "No connections found"}
+                </b>
                 <span className="text-[11.5px] text-navy-300">
-                  Same payment details used elsewhere
+                  {graph.count > 0 ? "Shared identifiers with other investigations" : "No shared identifiers detected yet"}
                 </span>
               </div>
             </div>
-            <p className="mt-3 text-[11.5px] leading-relaxed text-navy-300">
-              The evidence relationship graph visualizes how this investigation
-              connects to other reports via shared identifiers — implemented in
-              the full build with an interactive graph canvas.
-            </p>
           </Card>
 
           <Card>
@@ -167,8 +171,4 @@ export default async function InvestigationDetailPage({
       </div>
     </div>
   );
-}
-
-export function generateStaticParams() {
-  return investigations.map((i) => ({ id: i.id }));
 }

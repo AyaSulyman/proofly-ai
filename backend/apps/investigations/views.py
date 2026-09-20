@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsOwnerOrModerator
 from apps.moderation.utils import log_action
+from apps.notifications.utils import notify
 
 from . import ai_client, risk_engine
 from .models import AIAnalysisLog, Evidence, EvidenceConnection, Identifier, Investigation
@@ -180,6 +181,17 @@ class AnalyzeInvestigationView(APIView):
         )
 
         log_action(request.user, "investigation_analyzed", "Investigation", investigation.id)
+        notify(
+            request.user,
+            kind="investigation",
+            title=(
+                f"High risk detected — {investigation.title}" if result.level == "high"
+                else f"Investigation completed — {investigation.title}"
+            ),
+            body=f"Your investigation completed with a risk score of {result.score}/100. Review the full report.",
+            related_entity_type="Investigation",
+            related_entity_id=investigation.id,
+        )
 
         return Response(
             InvestigationDetailSerializer(investigation, context={"request": request}).data,

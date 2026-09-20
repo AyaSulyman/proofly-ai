@@ -1,8 +1,47 @@
+"use client";
+
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthShell, AuthCard, AuthCaption } from "@/components/layout/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role") === "business" ? "business" : "consumer";
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, password, confirmPassword, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const firstError = Object.values(data)[0];
+        throw new Error(Array.isArray(firstError) ? firstError[0] : String(firstError || "Registration failed."));
+      }
+      router.push(role === "business" ? "/business/claim" : "/investigations");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <AuthShell
       cursive={"Join a safer\nonline world\ntoday."}
@@ -21,52 +60,52 @@ export default function RegisterPage() {
             Create your <span className="text-gold-500">Account</span>
           </h1>
           <p className="mb-6 text-center text-[13.5px] leading-relaxed text-navy-300">
-            Join Proofly to investigate sellers, track disputes, and browse trust
-            reports.
+            {role === "business"
+              ? "Register your business to claim a verified profile."
+              : "Join Proofly to investigate sellers, track disputes, and browse trust reports."}
           </p>
 
-          <form action="/verify-email" className="contents">
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div className="mb-4 rounded-lg bg-danger-bg px-3.5 py-2.5 text-[12.5px] text-danger">{error}</div>
+            )}
             <Field label="Full Name">
-              <Input type="text" placeholder="Aya Haddad" icon="👤" required />
+              <Input type="text" placeholder="Aya Haddad" icon="👤" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
             </Field>
             <Field label="Email Address">
-              <Input type="email" placeholder="name@company.com" icon="✉️" required />
+              <Input type="email" placeholder="name@company.com" icon="✉️" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </Field>
             <Field label="Password">
-              <Input type="password" placeholder="Create a password" icon="🔒" required />
+              <Input type="password" placeholder="Create a password" icon="🔒" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </Field>
             <Field label="Confirm Password">
-              <Input type="password" placeholder="Re-enter password" icon="🔒" required />
+              <Input type="password" placeholder="Re-enter password" icon="🔒" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
             </Field>
             <label className="mb-4 flex items-start gap-2 text-xs leading-relaxed text-navy-300">
               <input type="checkbox" className="mt-0.5" required />
               I agree to Proofly&apos;s Terms of Service and Privacy Policy.
             </label>
             <Button
+              type="submit"
               size="md"
               block
+              disabled={loading}
               className="mt-1 bg-gradient-to-r from-navy-600 via-navy-500 to-gold-500 text-white"
             >
-              Create Account →
+              {loading ? "Creating account…" : "Create Account →"}
             </Button>
           </form>
-
-          <div className="my-4.5 flex items-center gap-2.5 text-[11px] tracking-wide text-navy-300">
-            <span className="h-px flex-1 bg-line" />
-            OR CONTINUE WITH
-            <span className="h-px flex-1 bg-line" />
-          </div>
-          <div className="flex gap-2.5">
-            <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line py-2.5 text-[13px] font-semibold">
-              🔴 Google
-            </button>
-            <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line py-2.5 text-[13px] font-semibold">
-               Apple
-            </button>
-          </div>
         </AuthCard>
         <AuthCaption />
       </div>
     </AuthShell>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

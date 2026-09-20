@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { PageHead } from "@/components/layout/app-shell";
 import { Avatar } from "@/components/ui/avatar";
 import { RiskBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { investigations } from "@/lib/mock-data";
+import { apiFetch } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
-import type { InvestigationStatus, SubjectType } from "@/lib/types";
+import type { InvestigationStatus, RiskLevel, SubjectType } from "@/lib/types";
 
 const STATUS_STYLE: Record<InvestigationStatus, string> = {
   draft: "bg-navy-50 text-navy-300",
@@ -28,7 +27,27 @@ const SUBJECT_ICON: Record<SubjectType, string> = {
   other: "➕",
 };
 
-export default function InvestigationsPage() {
+interface InvestigationListItem {
+  id: string;
+  title: string;
+  subjectType: SubjectType;
+  status: InvestigationStatus;
+  riskScore: number | null;
+  riskLevel: RiskLevel | null;
+  createdAt: string;
+  imageUrl: string | null;
+}
+
+export default async function InvestigationsPage() {
+  const data = await apiFetch<{ count: number; results: InvestigationListItem[] }>("/api/investigations/");
+  const investigations = data.results;
+  const counts = {
+    all: investigations.length,
+    draft: investigations.filter((i) => i.status === "draft").length,
+    analyzing: investigations.filter((i) => i.status === "analyzing").length,
+    completed: investigations.filter((i) => i.status === "completed").length,
+  };
+
   return (
     <div>
       <PageHead
@@ -42,7 +61,12 @@ export default function InvestigationsPage() {
       />
 
       <div className="mb-4.5 flex flex-wrap gap-2">
-        {["All (5)", "Draft (1)", "Analyzing (1)", "Completed (3)"].map((t, i) => (
+        {[
+          `All (${counts.all})`,
+          `Draft (${counts.draft})`,
+          `Analyzing (${counts.analyzing})`,
+          `Completed (${counts.completed})`,
+        ].map((t, i) => (
           <span
             key={t}
             className={`rounded-full border px-4 py-2 text-[12.5px] font-semibold ${
@@ -55,6 +79,15 @@ export default function InvestigationsPage() {
           </span>
         ))}
       </div>
+
+      {investigations.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-line bg-white p-10 text-center text-sm text-navy-300">
+          No investigations yet.{" "}
+          <a href="/investigations/new" className="font-semibold text-navy-600">
+            Start your first one →
+          </a>
+        </div>
+      )}
 
       <div className="space-y-2.5">
         {investigations.map((inv) => (
@@ -82,7 +115,7 @@ export default function InvestigationsPage() {
               {STATUS_LABEL[inv.status]}
             </span>
             <Button
-              href={inv.status === "draft" ? "/investigations/new" : `/investigations/${inv.id}`}
+              href={inv.status === "draft" ? `/investigations/${inv.id}/evidence` : `/investigations/${inv.id}`}
               variant="outline"
               size="sm"
             >
