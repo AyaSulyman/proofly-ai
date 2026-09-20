@@ -1,29 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHead } from "@/components/layout/app-shell";
 import { Field, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { submitReport } from "../actions";
 
 const CATEGORIES = [
-  { icon: "📦", label: "Non-delivery" },
-  { icon: "💳", label: "Payment issue" },
-  { icon: "🏷️", label: "Counterfeit item" },
-  { icon: "🎭", label: "Identity concern" },
-  { icon: "🌐", label: "Suspicious website" },
-  { icon: "➕", label: "Other" },
+  { value: "non_delivery", icon: "📦", label: "Non-delivery" },
+  { value: "payment_issue", icon: "💳", label: "Payment issue" },
+  { value: "counterfeit", icon: "🏷️", label: "Counterfeit item" },
+  { value: "identity_concern", icon: "🎭", label: "Identity concern" },
+  { value: "suspicious_website", icon: "🌐", label: "Suspicious website" },
+  { value: "other", icon: "➕", label: "Other" },
 ];
 
-export default function NewReportPage() {
-  const router = useRouter();
-  const [category, setCategory] = useState("Non-delivery");
+interface InvestigationOption {
+  id: string;
+  title: string;
+  riskLevel: string | null;
+  riskScore: number | null;
+}
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    router.push("/reports");
-  }
+function NewReportForm() {
+  const searchParams = useSearchParams();
+  const preselected = searchParams.get("investigationId") || "";
+  const [category, setCategory] = useState(CATEGORIES[0].value);
+  const [investigationId, setInvestigationId] = useState(preselected);
+  const [investigations, setInvestigations] = useState<InvestigationOption[]>([]);
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/investigations-list")
+      .then((r) => r.json())
+      .then((data) => setInvestigations(data.results || []))
+      .catch(() => setInvestigations([]));
+  }, []);
+
+  const selected = investigations.find((i) => i.id === investigationId);
 
   return (
     <div>
@@ -32,20 +48,30 @@ export default function NewReportPage() {
         description="Share your experience so others can make safer decisions. All reports are reviewed by a moderator before they go public."
       />
 
-      <form onSubmit={handleSubmit} className="max-w-2xl rounded-2xl border border-line bg-white p-6">
+      <form action={submitReport} onSubmit={() => setPending(true)} className="max-w-2xl rounded-2xl border border-line bg-white p-6">
+        <input type="hidden" name="category" value={category} />
         <Field label="Linked Investigation">
-          <div className="flex items-center gap-3 rounded-xl bg-navy-50 p-3.5">
-            <div className="flex h-9.5 w-9.5 items-center justify-center rounded-lg bg-white text-base">
-              🛍️
-            </div>
-            <div className="flex-1">
-              <b className="block text-[13px]">TechDeals Express — Instagram seller</b>
-              <span className="text-[11.5px] text-navy-300">
-                Investigation #1042 · High Risk (84/100)
-              </span>
-            </div>
-            <a className="text-xs font-bold text-info">Change</a>
-          </div>
+          <select
+            name="investigationId"
+            value={investigationId}
+            onChange={(e) => setInvestigationId(e.target.value)}
+            required
+            className="w-full rounded-xl border border-line bg-[#F9FAFD] px-3.5 py-3 text-[13.5px] outline-none"
+          >
+            <option value="" disabled>
+              Choose an investigation…
+            </option>
+            {investigations.map((inv) => (
+              <option key={inv.id} value={inv.id}>
+                {inv.title} {inv.riskLevel ? `— ${inv.riskLevel} risk` : ""}
+              </option>
+            ))}
+          </select>
+          {selected && (
+            <p className="mt-2 text-[11.5px] text-navy-300">
+              Report #{selected.id.slice(0, 8)} · {selected.riskScore ?? "—"}/100
+            </p>
+          )}
         </Field>
 
         <Field label="What happened?">
@@ -53,11 +79,11 @@ export default function NewReportPage() {
             {CATEGORIES.map((c) => (
               <button
                 type="button"
-                key={c.label}
-                onClick={() => setCategory(c.label)}
+                key={c.value}
+                onClick={() => setCategory(c.value)}
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border p-3.5 text-left",
-                  category === c.label
+                  category === c.value
                     ? "border-gold-500 bg-[#FFFBF0] shadow-[0_0_0_3px_rgba(217,164,65,0.14)]"
                     : "border-line bg-white"
                 )}
@@ -74,9 +100,9 @@ export default function NewReportPage() {
           hint="Stick to facts you can support with evidence. Avoid naming third parties who aren't involved."
         >
           <Textarea
+            name="description"
             required
             placeholder="Be specific and factual. Include dates, amounts, and what was promised vs. what happened."
-            defaultValue="Seller advertised an iPhone 16 Pro at $450, insisted on a wire transfer outside the platform, and used urgency language claiming other buyers were waiting."
           />
         </Field>
 
@@ -87,14 +113,19 @@ export default function NewReportPage() {
         </div>
 
         <div className="flex gap-3">
-          <Button type="submit" variant="navy">
-            Submit for Review →
-          </Button>
-          <Button type="button" variant="outline">
-            Save as Draft
+          <Button type="submit" variant="navy" disabled={pending || !investigationId}>
+            {pending ? "Submitting…" : "Submit for Review →"}
           </Button>
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewReportPage() {
+  return (
+    <Suspense>
+      <NewReportForm />
+    </Suspense>
   );
 }

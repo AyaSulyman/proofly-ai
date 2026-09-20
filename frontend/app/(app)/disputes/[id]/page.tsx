@@ -1,32 +1,52 @@
-"use client";
-
-import { use, useState } from "react";
 import { notFound } from "next/navigation";
 import { PageHead } from "@/components/layout/app-shell";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { disputes } from "@/lib/mock-data";
+import { apiFetch, ApiError } from "@/lib/session";
+import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import type { Dispute } from "@/lib/types";
+import { DisputeReplyBox } from "./dispute-reply-box";
 
-const STAGES = ["Opened", "Business Responded", "Awaiting You", "Under Review", "Resolved"];
+const STAGES: { key: string; label: string }[] = [
+  { key: "open", label: "Opened" },
+  { key: "awaiting_business", label: "Business Responded" },
+  { key: "awaiting_customer", label: "Awaiting You" },
+  { key: "under_review", label: "Under Review" },
+  { key: "resolved", label: "Resolved" },
+];
 
-export default function DisputeThreadPage({
+function stageIndex(status: string) {
+  if (status === "resolved" || status === "dismissed") return 4;
+  if (status === "under_review") return 3;
+  if (status === "awaiting_customer") return 2;
+  if (status === "awaiting_business") return 1;
+  return 0;
+}
+
+export default async function DisputeThreadPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const dispute = disputes.find((d) => d.id === id);
-  const [reply, setReply] = useState("");
-  if (!dispute) return notFound();
+  const { id } = await params;
 
-  const currentStage = 2; // "Awaiting You"
+  let dispute: Dispute;
+  try {
+    dispute = await apiFetch<Dispute>(`/api/disputes/${id}/`);
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 403)) return notFound();
+    throw err;
+  }
+
+  const currentStage = stageIndex(dispute.status);
+  const resolved = dispute.status === "resolved" || dispute.status === "dismissed";
 
   return (
     <div>
       <PageHead
-        title={`Dispute #${dispute.id.replace("disp_", "D-")} — ${dispute.subjectName}`}
-        description="Payment issue · Opened Sep 12, 2026"
+        title={`Dispute #${dispute.id.slice(0, 8)} — ${dispute.subjectName}`}
+        description={`Opened ${formatDate(dispute.createdAt)}`}
         action={
           <Button href="/disputes" variant="outline" size="sm">
             ← Back to Disputes
@@ -34,10 +54,9 @@ export default function DisputeThreadPage({
         }
       />
 
-      {/* Status bar */}
       <div className="mb-5 flex items-center rounded-2xl border border-line bg-white p-4.5">
-        {STAGES.map((label, i) => (
-          <div key={label} className="flex flex-1 items-center last:flex-none">
+        {STAGES.map((stage, i) => (
+          <div key={stage.key} className="flex flex-1 items-center last:flex-none">
             <div className="text-center">
               <div
                 className={cn(
@@ -49,13 +68,8 @@ export default function DisputeThreadPage({
               >
                 {i < currentStage ? "✓" : i + 1}
               </div>
-              <span
-                className={cn(
-                  "whitespace-nowrap text-[11px] font-semibold",
-                  i === currentStage ? "text-navy-700" : "text-navy-300"
-                )}
-              >
-                {label}
+              <span className={cn("whitespace-nowrap text-[11px] font-semibold", i === currentStage ? "text-navy-700" : "text-navy-300")}>
+                {stage.label}
               </span>
             </div>
             {i < STAGES.length - 1 && <div className="mx-2.5 mt-[-16px] h-0.5 flex-1 bg-line" />}
@@ -74,17 +88,12 @@ export default function DisputeThreadPage({
                   m.author === "reporter" ? "bg-gradient-to-br from-[#9fb0d6] to-[#5b6ea8]" : "bg-gradient-to-br from-gold-300 to-gold-500 !text-navy-700"
                 )}
               >
-                {m.authorName.slice(0, 2).toUpperCase()}
+                {(m.authorName || "?").slice(0, 2).toUpperCase()}
               </div>
-              <div
-                className={cn(
-                  "flex-1 rounded-2xl p-3.5",
-                  m.author === "reporter" ? "bg-info-bg" : "bg-[#FFFBF0]"
-                )}
-              >
+              <div className={cn("flex-1 rounded-2xl p-3.5", m.author === "reporter" ? "bg-info-bg" : "bg-[#FFFBF0]")}>
                 <div className="mb-1.5 flex justify-between">
                   <b className="text-[12.5px]">{m.authorName}</b>
-                  <span className="text-[11px] text-navy-300">{m.createdAt}</span>
+                  <span className="text-[11px] text-navy-300">{formatDate(m.createdAt)}</span>
                 </div>
                 <p className="text-[13px] leading-relaxed">{m.text}</p>
                 {m.attachment && (
@@ -95,41 +104,28 @@ export default function DisputeThreadPage({
               </div>
             </div>
           ))}
+          {dispute.messages.length === 0 && (
+            <p className="mb-4 text-[12.5px] text-navy-300">No messages yet.</p>
+          )}
 
-          <div className="mb-5 rounded-xl bg-info-bg px-4 py-3 text-[12.5px] text-info">
-            💬 Your response is needed. Confirm whether the refund was
-            received, or provide additional evidence.
-          </div>
-
-          <div className="rounded-2xl border border-line p-3.5">
-            <textarea
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              placeholder="Write your response… Be factual and attach any supporting evidence."
-              className="min-h-[80px] w-full resize-y border-none text-[13px] outline-none"
-            />
-            <div className="mt-2.5 flex items-center justify-between border-t border-line pt-3">
-              <Button variant="outline" size="sm">📎 Attach Evidence</Button>
-              <div className="flex gap-2.5">
-                <Button variant="outline" size="sm">Mark as Resolved</Button>
-                <Button variant="navy" size="sm" disabled={!reply.trim()}>
-                  Send Response →
-                </Button>
-              </div>
+          {!resolved && dispute.status === "awaiting_customer" && (
+            <div className="mb-5 rounded-xl bg-info-bg px-4 py-3 text-[12.5px] text-info">
+              💬 Your response is needed. Confirm what happened, or provide additional evidence.
             </div>
-          </div>
+          )}
+
+          <DisputeReplyBox disputeId={dispute.id} resolved={resolved} />
         </Card>
 
         <div>
           <Card className="mb-5">
             <CardHeader title="Dispute Details" />
             {[
-              ["Dispute ID", `#${dispute.id.replace("disp_", "D-")}`],
-              ["Category", "Payment issue"],
-              ["Status", "Awaiting your response"],
+              ["Dispute ID", `#${dispute.id.slice(0, 8)}`],
+              ["Status", dispute.status.replace(/_/g, " ")],
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-between border-b border-line py-2 text-[12.5px] last:border-none">
-                <span className="text-navy-300">{k}</span>
+              <div key={k} className="flex justify-between border-b border-line py-2 text-[12.5px] capitalize last:border-none">
+                <span className="text-navy-300 normal-case">{k}</span>
                 <span className="font-semibold">{v}</span>
               </div>
             ))}

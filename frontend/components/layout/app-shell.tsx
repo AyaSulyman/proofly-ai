@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { currentUser, notifications } from "@/lib/mock-data";
+import { SignOutButton } from "./sign-out-button";
 
 const NAV_ITEMS = [
   { href: "/investigations", label: "Investigations", icon: "🔎" },
@@ -15,9 +15,21 @@ const NAV_ITEMS = [
   { href: "/settings", label: "Profile", icon: "👤" },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export interface AppShellUser {
+  fullName: string;
+  imageUrl: string | null;
+}
+
+export function AppShell({
+  children,
+  user,
+  unreadCount = 0,
+}: {
+  children: React.ReactNode;
+  user: AppShellUser;
+  unreadCount?: number;
+}) {
   const pathname = usePathname();
-  const unread = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="flex min-h-screen">
@@ -42,9 +54,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <span>{item.icon}</span>
                 {item.label}
-                {item.href === "/notifications" && unread > 0 && (
+                {item.href === "/notifications" && unreadCount > 0 && (
                   <span className="ml-auto flex h-4.5 w-4.5 items-center justify-center rounded-full bg-danger text-[9px] font-bold text-white">
-                    {unread}
+                    {unreadCount}
                   </span>
                 )}
               </Link>
@@ -52,7 +64,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="flex-1" />
-        <div className="rounded-xl bg-white/5 p-3 text-[11px] text-navy-100/80">
+        <SignOutButton />
+        <div className="mt-2 rounded-xl bg-white/5 p-3 text-[11px] text-navy-100/80">
           🛡️ Safer decisions start here.
         </div>
       </aside>
@@ -68,13 +81,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="relative flex h-9 w-9 items-center justify-center rounded-full bg-navy-50 text-sm"
             >
               🔔
-              {unread > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-danger" />
               )}
             </Link>
             <Link href="/settings" className="flex items-center gap-2 text-[12.5px] font-semibold">
-              <Avatar name={currentUser.name} src={currentUser.imageUrl} size="xs" shape="circle" />
-              {currentUser.name}
+              <Avatar name={user.fullName} src={user.imageUrl} size="xs" shape="circle" />
+              {user.fullName}
             </Link>
           </div>
         </div>

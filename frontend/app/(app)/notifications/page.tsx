@@ -1,8 +1,8 @@
 import { PageHead } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
-import { notifications } from "@/lib/mock-data";
+import { apiFetch } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
+import { MarkAllReadButton } from "./mark-all-button";
 
 const ICON: Record<AppNotification["kind"], { icon: string; bg: string }> = {
   investigation: { icon: "🚩", bg: "#FDEBEE" },
@@ -20,14 +20,22 @@ function timeAgo(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export default function NotificationsPage() {
+export default async function NotificationsPage() {
+  const data = await apiFetch<{ results: AppNotification[] }>("/api/notifications/");
+  const notifications = data.results;
+
   return (
     <div>
       <PageHead
         title="Notifications"
         description="Updates on your investigations, reports, and disputes."
-        action={<Button variant="outline" size="sm">Mark all as read</Button>}
+        action={<MarkAllReadButton />}
       />
+      {notifications.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-line bg-white p-10 text-center text-sm text-navy-300">
+          You&apos;re all caught up.
+        </div>
+      )}
       <div className="space-y-2.5">
         {notifications.map((n) => {
           const { icon, bg } = ICON[n.kind];
@@ -39,19 +47,14 @@ export default function NotificationsPage() {
                 !n.read && "border-l-4 border-l-gold-500 bg-[#FFFDF8]"
               )}
             >
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base"
-                style={{ background: bg }}
-              >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base" style={{ background: bg }}>
                 {icon}
               </div>
               <div className="flex-1">
                 <b className="mb-0.5 block text-[13px]">{n.title}</b>
                 <span className="text-xs leading-relaxed text-navy-300">{n.body}</span>
               </div>
-              <span className="whitespace-nowrap text-[11px] text-navy-100">
-                {timeAgo(n.createdAt)}
-              </span>
+              <span className="whitespace-nowrap text-[11px] text-navy-100">{timeAgo(n.createdAt)}</span>
             </div>
           );
         })}
