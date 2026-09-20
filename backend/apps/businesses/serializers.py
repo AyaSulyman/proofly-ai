@@ -10,6 +10,7 @@ class BusinessListSerializer(serializers.ModelSerializer):
 
     image_url = serializers.SerializerMethodField()
     member_since = serializers.DateTimeField(source="created_at", read_only=True)
+    rating = serializers.FloatField()
 
     class Meta:
         model = Business
