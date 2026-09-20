@@ -15,11 +15,12 @@ class DisputeMessageSerializer(serializers.ModelSerializer):
 class DisputeListSerializer(serializers.ModelSerializer):
     """Matches lib/types.ts `Dispute` (without messages) — "My Disputes" list."""
 
+    report_id = serializers.PrimaryKeyRelatedField(source="report", read_only=True)
     subject_name = serializers.CharField(source="business.name", read_only=True)
 
     class Meta:
         model = Dispute
-        fields = ["id", "report", "subject_name", "status", "created_at", "resolved_at"]
+        fields = ["id", "report_id", "subject_name", "status", "created_at", "resolved_at"]
 
 
 class DisputeDetailSerializer(DisputeListSerializer):

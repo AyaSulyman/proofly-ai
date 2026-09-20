@@ -22,6 +22,11 @@ class UserSerializer(serializers.ModelSerializer):
             "image_url",
             "is_verified",
             "created_at",
+            "notify_investigation_completed",
+            "notify_report_status",
+            "notify_dispute_activity",
+            "notify_new_connections",
+            "two_factor_enabled",
         ]
         read_only_fields = ["id", "email", "role", "is_verified", "created_at"]
 
