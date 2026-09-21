@@ -1,0 +1,70 @@
+:root {
+  --primary: #651b2b;
+  --secondary: #7b2637;
+  --accent: #e8c7a7;
+  --primary-fg: #fffdf9;
+  --body-fg: #42151d;
+  --body-bg: #fbf7f1;
+  --body-quiet-color: #7c6261;
+  --header-color: #fffdf9;
+  --header-branding-color: #fffdf9;
+  --header-bg: #42151d;
+  --header-link-color: #fffdf9;
+  --breadcrumbs-fg: #f5e7da;
+  --breadcrumbs-link-fg: #fffdf9;
+  --breadcrumbs-bg: #651b2b;
+  --link-fg: #7b2637;
+  --link-hover-color: #42151d;
+  --link-selected-fg: #a14b5c;
+  --hairline-color: #eaded5;
+  --border-color: #e2d2c7;
+  --error-fg: #a62f42;
+  --message-success-bg: #e8f3ed;
+  --message-warning-bg: #f8eee0;
+  --message-error-bg: #fae9e9;
+  --darkened-bg: #f5ede5;
+  --selected-bg: #f7e9eb;
+  --selected-row: #fff5ed;
+  --button-fg: #fffdf9;
+  --button-bg: #651b2b;
+  --button-hover-bg: #42151d;
+  --default-button-bg: #7b2637;
+  --default-button-hover-bg: #42151d;
+  --close-button-bg: #7c6261;
+  --delete-button-bg: #a62f42;
+  color-scheme: light;
+}
+
+html, body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+body { background: radial-gradient(circle at 0 0, rgba(186,112,79,.08), transparent 30rem), var(--body-bg); }
+#header { min-height: 64px; padding: 0 28px; box-shadow: 0 8px 28px rgba(66,21,29,.18); }
+#branding { display: flex; align-items: center; }
+.proofly-brand { display: flex; align-items: center; gap: 11px; color: #fffdf9 !important; text-decoration: none; }
+.proofly-brand__mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px 20px 15px 22px; background: linear-gradient(145deg,#f0d7bd,#ba704f); color: #42151d; font: 800 19px Georgia,serif; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+.proofly-brand strong { display: block; font: 700 20px Georgia,serif; letter-spacing: -.02em; }
+.proofly-brand small { display: block; margin-top: 2px; color: #dcbcb3; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+.proofly-admin-label { display: inline-flex; align-items: center; margin-top: 19px; padding: 6px 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; color: #e8c7a7; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+div.breadcrumbs { padding: 13px 28px; }
+#content { padding: 28px; }
+#content h1 { color: #42151d; font: 700 30px Georgia,serif; letter-spacing: -.025em; }
+#content-main, #content-related { border-radius: 18px; }
+.module { overflow: hidden; border: 1px solid #eaded5; border-radius: 16px; background: #fffdf9; box-shadow: 0 9px 30px rgba(66,21,29,.06); }
+.module h2, .module caption, .inline-group h2 { padding: 12px 16px; background: #651b2b; color: #fffdf9; font-weight: 700; }
+.dashboard .module table th { width: 100%; }
+.dashboard .module table td { white-space: nowrap; }
+.dashboard .module a { font-weight: 600; }
+input, textarea, select, .vTextField { border-color: #e2d2c7 !important; border-radius: 10px !important; background: #fffdf9 !important; padding: 9px 11px !important; }
+input:focus, textarea:focus, select:focus { border-color: #ba704f !important; outline: 3px solid rgba(186,112,79,.13) !important; }
+.button, input[type=submit], input[type=button], .submit-row input, a.button { border-radius: 10px !important; padding: 10px 16px !important; font-weight: 700; box-shadow: none !important; }
+.submit-row { border: 1px solid #eaded5; border-radius: 14px; background: #fffdf9; }
+#changelist-filter { border-radius: 14px; background: #fffdf9; }
+#changelist-filter h2 { border-radius: 14px 14px 0 0; }
+#nav-sidebar { border-right: 1px solid #eaded5; background: #fffaf5; }
+#nav-sidebar .current-model { background: #f3dfdf; }
+table thead th { background: #f5ede5; color: #651b2b; }
+.paginator { border-radius: 0 0 14px 14px; background: #fffdf9; }
+@media (max-width: 767px) {
+  #header { padding: 10px 16px; }
+  .proofly-admin-label { display: none; }
+  #content { padding: 18px 14px; }
+}
