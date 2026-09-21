@@ -60,8 +60,21 @@ export async function apiFetch<T = unknown>(
     cache: "no-store",
   });
 
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+const text = await res.text();
+
+let data: unknown = null;
+
+if (text) {
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = {
+      detail: res.ok
+        ? "The API returned an invalid response."
+        : `The API returned an HTML or non-JSON error response (${res.status}).`,
+    };
+  }
+}
 
   if (!res.ok) {
     throw new ApiError(res.status, data);

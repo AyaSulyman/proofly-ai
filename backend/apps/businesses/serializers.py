@@ -51,15 +51,29 @@ class BusinessDetailSerializer(BusinessListSerializer):
 
 
 class BusinessCreateSerializer(serializers.ModelSerializer):
-    """POST /api/businesses/claim/ — "Claim Your Business" form."""
+    """POST /api/businesses/claim/ — Claim Your Business form."""
 
     class Meta:
         model = Business
-        fields = ["name", "category", "website", "email", "phone", "location", "image"]
+        fields = [
+            "id",
+            "name",
+            "category",
+            "website",
+            "email",
+            "phone",
+            "location",
+            "image",
+        ]
+        read_only_fields = ["id"]
 
     def create(self, validated_data):
         request = self.context["request"]
-        return Business.objects.create(owner=request.user, **validated_data)
+
+        return Business.objects.create(
+            owner=request.user,
+            **validated_data,
+        )
 
 
 class ReviewSerializer(serializers.ModelSerializer):
