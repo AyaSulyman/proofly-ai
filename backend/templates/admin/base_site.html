@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | Proofly Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/proofly-admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+  <a class="proofly-brand" href="{% url 'admin:index' %}">
+    <span class="proofly-brand__mark">P</span>
+    <span>
+      <strong>Proofly</strong>
+      <small>Trust Operations</small>
+    </span>
+  </a>
+{% endblock %}
+
+{% block nav-global %}
+  <span class="proofly-admin-label">Administration portal</span>
+{% endblock %}

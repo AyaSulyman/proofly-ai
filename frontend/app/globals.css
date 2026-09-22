@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  /* Legacy utility names stay in place so existing screens inherit the new
+     palette without changing routes, behavior, or data flow. */
+  --color-navy-50: #162338;
+  --color-navy-100: #c0c8d3;
+  --color-navy-300: #aab5c4;
+  --color-navy-500: #e7bb61;
+  --color-navy-600: #111d2f;
+  --color-navy-700: #070c16;
+  --color-gold-300: #f4d58a;
+  --color-gold-500: #e7b857;
+  --color-bg: #070c16;
+  --color-line: #2b394d;
+  --color-ok: #58d4d2;
+  --color-ok-bg: #102b34;
+  --color-danger: #f4d58a;
+  --color-danger-bg: #31291b;
+  --color-warn: #e7b857;
+  --color-warn-bg: #2b2519;
+  --color-info: #58d4d2;
+  --color-info-bg: #102b34;
+}
+
+@theme inline {
+  --color-navy-50: var(--color-navy-50);
+  --color-navy-100: var(--color-navy-100);
+  --color-navy-300: var(--color-navy-300);
+  --color-navy-500: var(--color-navy-500);
+  --color-navy-600: var(--color-navy-600);
+  --color-navy-700: var(--color-navy-700);
+  --color-gold-300: var(--color-gold-300);
+  --color-gold-500: var(--color-gold-500);
+  --color-bg: var(--color-bg);
+  --color-line: var(--color-line);
+  --color-ok: var(--color-ok);
+  --color-ok-bg: var(--color-ok-bg);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-warn: var(--color-warn);
+  --color-warn-bg: var(--color-warn-bg);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+  --font-sans: var(--font-poppins);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: radial-gradient(circle at 82% -10%, rgba(88,212,210,.09), transparent 34rem), radial-gradient(circle at 8% 5%, rgba(231,184,87,.08), transparent 30rem), var(--color-bg);
+  color: #f8f2e4;
+  font-size: 16px;
+  line-height: 1.6;
+}
+::selection { background: #e7b857; color: #070c16; }
+a, button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button, a { transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+button:not(:disabled), a[href] { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(231,184,87,.4);
+  outline-offset: 2px;
+}
+
+/* Shared high-contrast dark surfaces. Keeping these overrides centralized
+   lets every existing route inherit the redesign without changing behavior. */
+.bg-white { background-color: #101a2a !important; }
+.text-navy-700 { color: #f8f2e4 !important; }
+.text-navy-600, .text-navy-500 { color: #f4d58a !important; }
+.text-navy-300 { color: #b5bfcc !important; }
+.border-white { border-color: rgba(244,213,138,.4) !important; }
+.bg-\[\#101A2A\] { background-color: #101a2a !important; }
+.bg-\[\#0B1423\] { background-color: #0b1423 !important; }
+main p, main span, main li { text-wrap: pretty; }
+h1, h2, h3, h4, h5, h6, b, strong { color: #f8f2e4; }
+input, textarea, select { background-color: #0b1423 !important; border-color: #35445a !important; color: #f8f2e4 !important; }
+input::placeholder, textarea::placeholder { color: #8f9bad !important; opacity: 1; }
+input, textarea, select { color-scheme: dark; }
+
+@layer utilities {
+  .shadow-card { box-shadow: 0 26px 70px rgba(0,0,0,.42), 0 0 0 1px rgba(244,213,138,.05); }
+  .shadow-card-sm { box-shadow: 0 12px 34px rgba(0,0,0,.28), 0 0 0 1px rgba(244,213,138,.04); }
+  .display-type { font-family: Georgia, "Times New Roman", serif; letter-spacing: -.035em; }
+  .wine-grid {
+    background-image: linear-gradient(rgba(88,212,210,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(244,213,138,.04) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+  .paper-texture { background-image: radial-gradient(rgba(244,213,138,.08) .7px, transparent .7px); background-size: 13px 13px; }
+  .panel-surface { background: linear-gradient(145deg, rgba(18,31,50,.96), rgba(10,18,31,.98)); border: 1px solid #2b394d; }
+  .gold-line { background: linear-gradient(90deg, transparent, #e7b857, transparent); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes proofly-float { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-9px) rotate(1deg); } }
+  @keyframes proofly-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,184,87,.3); } 50% { box-shadow: 0 0 0 10px rgba(231,184,87,0); } }
+  .proofly-float { animation: proofly-float 5.5s ease-in-out infinite; }
+  .proofly-pulse { animation: proofly-pulse 2.5s ease-out infinite; }
+}
