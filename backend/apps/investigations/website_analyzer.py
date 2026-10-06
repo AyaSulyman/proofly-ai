@@ -9,8 +9,17 @@ from urllib.parse import urljoin, urlparse
 import requests
 
 MAX_BYTES = 1_500_000
-TIMEOUT = (4, 10)
+TIMEOUT = (5, 20)
 
+headers = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 Chrome/125 Safari/537.36 "
+        "ProoflySafetyScanner/1.0"
+    ),
+    "Accept": "text/html,application/xhtml+xml",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 class _PageParser(HTMLParser):
     def __init__(self):
